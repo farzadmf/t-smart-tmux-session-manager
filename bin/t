@@ -110,7 +110,7 @@ if [ $# -eq 0 ]; then             # no argument provided
 				--header "$HEADER" \
 				--no-sort \
 				--prompt "$PROMPT" \
-				-p 60%,50%
+				-p 75%,60%
 		)
 	fi
 else # argument provided
