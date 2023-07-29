@@ -4,6 +4,20 @@
 
 </a>
 
+---
+
+# Changes in this fork:
+
+- Integration with [tmuxinator](https://github.com/tmuxinator/tmuxinator) is added (`ctrl-x`).
+- Zoxide's binding is changed to be `ctrl-o` (originally it was `ctrl-x`, now used for `tmuxinator`).
+- In the list of items, prefixes are added to differentiate the items; prefixes correspond to the binding used:
+  - `[S]` for tmux sessions.
+  - `[X]` for tmuxinator projects.
+  - `[O]` for zoxide items.
+- A "header" is added to differentiate between the lists.
+
+---
+
 # t - the smart tmux session manager
 
 tmux is a powerful tool, but dealing with sessions can be painful. This script makes it easy to create and switch tmux sessions:
