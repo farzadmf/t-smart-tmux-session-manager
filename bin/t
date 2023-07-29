@@ -87,7 +87,13 @@ if [ $# -eq 0 ]; then             # no argument provided
 		fi
 	else # in tmux
 		RESULT=$(
-			(get_sessions_by_mru && (zoxide query -l | sed -e "$HOME_REPLACER")) | fzf-tmux \
+			(
+				(python -c 'print(" TMUX ".center(60, "-"))') &&
+					get_sessions_by_mru &&
+					(echo -e '\n') &&
+					(python -c 'print(" ZOXIDE ".center(60, "-"))') &&
+					(zoxide query -l)
+			) | fzf-tmux \
 				--bind "$DIR_BIND" \
 				--bind "$SESSION_BIND" \
 				--bind "$ZOXIDE_BIND" \
@@ -118,6 +124,9 @@ fi
 if [ "$RESULT" = "" ]; then # no result
 	exit 0                     # exit silently
 fi
+
+if [[ "$RESULT" =~ '----- TMUX' ]]; then exit 0; fi
+if [[ "$RESULT" =~ '----- ZOXIDE' ]]; then exit 0; fi
 
 if [ $HOME_SED_SAFE -eq 0 ]; then
 	RESULT=$(echo "$RESULT" | sed -e "s|^~/|$HOME/|") # get real home path back
