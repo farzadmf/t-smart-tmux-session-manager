@@ -66,7 +66,13 @@ if [ $# -eq 0 ]; then             # no argument provided
 	if [ "$TMUX" = "" ]; then        # not in tmux
 		if [ $TMUX_STATUS -eq 0 ]; then # tmux is running
 			RESULT=$(
-				(get_sessions_by_mru && (zoxide query -l | sed -e "$HOME_REPLACER")) | fzf \
+				(
+					(python -c 'print(" TMUX ".center(60, "-"))') &&
+						get_sessions_by_mru &&
+						(echo -e '\n') &&
+						(python -c 'print(" ZOXIDE ".center(60, "-"))') &&
+						(zoxide query -l | sed -e "$HOME_REPLACER")
+				) | fzf \
 					--bind "$DIR_BIND" \
 					--bind "$SESSION_BIND" \
 					--bind "$ZOXIDE_BIND" \
@@ -77,7 +83,10 @@ if [ $# -eq 0 ]; then             # no argument provided
 			)
 		else # tmux is not running
 			RESULT=$(
-				(zoxide query -l | sed -e "$HOME_REPLACER") | fzf \
+				(
+					(python -c 'print(" ZOXIDE ".center(60, "-"))') &&
+						(zoxide query -l | sed -e "$HOME_REPLACER")
+				) | fzf \
 					--bind "$DIR_BIND" \
 					--border-label "$BORDER_LABEL" \
 					--header " ctrl-d: directory" \
@@ -92,7 +101,7 @@ if [ $# -eq 0 ]; then             # no argument provided
 					get_sessions_by_mru &&
 					(echo -e '\n') &&
 					(python -c 'print(" ZOXIDE ".center(60, "-"))') &&
-					(zoxide query -l)
+					(zoxide query -l | sed -e "$HOME_REPLACER")
 			) | fzf-tmux \
 				--bind "$DIR_BIND" \
 				--bind "$SESSION_BIND" \
