@@ -46,41 +46,40 @@ if [ $HOME_SED_SAFE -eq 0 ]; then # $HOME should be safe to use in sed
 	HOME_REPLACER="s|^$HOME/|~/|"
 fi
 
-BORDER_LABEL=" t - smart tmux session manager "
-HEADER=" ctrl-s: sessions / ctrl-x: tmuxinator / ctrl-o: zoxide / ctrl-d: directory"
-PROMPT=$(get_fzf_prompt)
-SESSION_BIND="ctrl-s:change-prompt(sessions> )+reload(tmux list-sessions -F '#S')"
-ZOXIDE_BIND="ctrl-o:change-prompt(zoxide> )+reload(zoxide query -l | sed -e \"$HOME_REPLACER\")"
-TMUXINATOR_BIND="ctrl-x:change-prompt(tmuxinator> )+reload(tmuxinator list | tail -n +2 )"
-
 SESSION_MODE='[S]'
 TMUXINATOR_MODE='[X]'
 ZOXIDE_MODE='[O]'
+
+ZOXIDE_ITEMS="
+	zoxide query -l | sed -e '$HOME_REPLACER' | sed 's/^/$ZOXIDE_MODE /'
+"
+
+SESSIONS_BY_MRU="
+	tmux list-sessions -F '#{session_last_attached} #{session_name}' |
+		sort --numeric-sort --reverse |
+		awk '{print \$2}' |
+		sed 's/^/$SESSION_MODE /'
+"
+
+# 'tail -n +2' to skip first line saying 'tmuxinator projects"
+TMUXINATOR_PROJECTS="
+	tmuxinator list |
+		tail -n +2 |
+		sed 's/^/$TMUXINATOR_MODE /'
+"
+
+BORDER_LABEL=" t - smart tmux session manager "
+HEADER=" ctrl-s: sessions / ctrl-x: tmuxinator / ctrl-o: zoxide / ctrl-d: directory"
+PROMPT=$(get_fzf_prompt)
+SESSION_BIND="ctrl-s:change-prompt(sessions> )+reload($SESSIONS_BY_MRU)"
+ZOXIDE_BIND="ctrl-o:change-prompt(zoxide> )+reload($ZOXIDE_ITEMS)"
+TMUXINATOR_BIND="ctrl-x:change-prompt(tmuxinator> )+reload($TMUXINATOR_PROJECTS)"
 
 if fd --version &>/dev/null; then # fd is installed
 	DIR_BIND="ctrl-d:change-prompt(directory> )+reload(cd $HOME && echo $HOME; fd --type d --hidden --absolute-path --color never --exclude .git --exclude node_modules)"
 else # fd is not installed
 	DIR_BIND="ctrl-d:change-prompt(directory> )+reload(cd $HOME && find ~+ -type d -name node_modules -prune -o -name .git -prune -o -type d -print)"
 fi
-
-sessions_by_mru() {
-	tmux list-sessions -F '#{session_last_attached} #{session_name}' |
-		sort --numeric-sort --reverse |
-		awk '{print $2}' |
-		sed "s/^/$SESSION_MODE /"
-}
-
-zoxide_items() {
-	zoxide query -l | sed -e "$HOME_REPLACER" | sed "s/^/$ZOXIDE_MODE /"
-}
-
-tmuxinator_projects() {
-	which tmuxinator &>/dev/null || return 0
-
-	tmuxinator list |
-		tail -n +2 | # skip first line saying "tmuxinator projects"
-		sed "s/^/$TMUXINATOR_MODE /"
-}
 
 header() {
 	local text=$1
@@ -93,10 +92,10 @@ if [ $# -eq 0 ]; then             # no argument provided
 		if [ $TMUX_STATUS -eq 0 ]; then # tmux is running
 			RESULT=$(
 				(
-					header TMUX &&
-						sessions_by_mru &&
-						header ZOXIDE &&
-						zoxide_items
+					header TMUX
+					eval "$SESSIONS_BY_MRU"
+					header ZOXIDE
+					eval "$ZOXIDE_ITEMS"
 				) | fzf \
 					--bind "$DIR_BIND" \
 					--bind "$SESSION_BIND" \
@@ -110,8 +109,8 @@ if [ $# -eq 0 ]; then             # no argument provided
 		else # tmux is not running
 			RESULT=$(
 				(
-					header ZOXIDE &&
-						zoxide_items
+					header ZOXIDE
+					eval "$ZOXIDE_ITEMS"
 				) | fzf \
 					--bind "$DIR_BIND" \
 					--border-label "$BORDER_LABEL" \
@@ -123,12 +122,12 @@ if [ $# -eq 0 ]; then             # no argument provided
 	else # in tmux
 		RESULT=$(
 			(
-				header TMUX &&
-					sessions_by_mru &&
-					header TMUXINATOR &&
-					tmuxinator_projects &&
-					header ZOXIDE &&
-					zoxide_items
+				header TMUX
+				eval "$SESSIONS_BY_MRU"
+				header TMUXINATOR
+				eval "$TMUXINATOR_PROJECTS"
+				header ZOXIDE
+				eval "$ZOXIDE_ITEMS"
 			) | fzf-tmux \
 				--bind "$DIR_BIND" \
 				--bind "$SESSION_BIND" \
